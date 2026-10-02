@@ -19,6 +19,8 @@ from PIL import Image
 import numpy as np
 from sklearn.metrics import accuracy_score, roc_auc_score, classification_report
 from tqdm import tqdm
+import pandas as pd
+import io
 
 
 class AIImageDataset(Dataset):
@@ -148,6 +150,116 @@ class GeneratorDataset(Dataset):
         return img, torch.tensor(label, dtype=torch.long)
 
 
+class ParquetDataset(Dataset):
+    """Dataset for loading images from parquet files with image bytes and labels."""
+    
+    def __init__(
+        self,
+        parquet_dir: str,
+        split: str = "train",
+        transform=None,
+        max_samples_per_class: Optional[int] = None,
+    ):
+        self.parquet_dir = Path(parquet_dir)
+        self.split = split
+        self.transform = transform or self._default_transform()
+        self.max_samples_per_class = max_samples_per_class
+        
+        # Find parquet files
+        if split == "train":
+            pattern = "train-*.parquet"
+        else:
+            pattern = "validation-*.parquet"
+        
+        self.parquet_files = sorted(self.parquet_dir.glob(pattern))
+        if not self.parquet_files:
+            raise FileNotFoundError(f"No {pattern} files found in {parquet_dir}")
+        
+        # Load metadata (row counts) for each file
+        self.file_offsets = []
+        self.file_labels = []
+        self.total_samples = 0
+        self._build_index(max_samples_per_class)
+        
+        print(f"ParquetDataset {split}: {self.total_samples} samples from {len(self.parquet_files)} files")
+    
+    def _default_transform(self):
+        return transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ])
+    
+    def _build_index(self, max_per_class: Optional[int]):
+        """Build index of all samples across parquet files."""
+        real_count = 0
+        ai_count = 0
+        max_each = max_per_class if max_per_class else float('inf')
+        
+        for pf in self.parquet_files:
+            df = pd.read_parquet(pf, columns=['label'])
+            labels = df['label'].values
+            
+            # Filter based on max_per_class
+            real_mask = (labels == 0)
+            ai_mask = (labels == 1)
+            
+            if max_per_class:
+                # Need to track counts per class
+                real_indices = np.where(real_mask)[0]
+                ai_indices = np.where(ai_mask)[0]
+                
+                # Take up to max_per_class from each
+                real_take = real_indices[:max(0, int(max_each) - real_count)]
+                ai_take = ai_indices[:max(0, int(max_each) - ai_count)]
+                
+                if len(real_take) == 0 and len(ai_take) == 0:
+                    continue
+                
+                keep_indices = np.sort(np.concatenate([real_take, ai_take]))
+                offset_start = self.total_samples
+                self.file_offsets.append((self.total_samples, pf, keep_indices))
+                self.total_samples += len(keep_indices)
+                real_count += len(real_take)
+                ai_count += len(ai_take)
+            else:
+                offset_start = self.total_samples
+                self.file_offsets.append((offset_start, pf, np.arange(len(labels))))
+                self.total_samples += len(labels)
+                real_count += int(real_mask.sum())
+                ai_count += int(ai_mask.sum())
+        
+        print(f"Loaded {self.total_samples} samples ({real_count} real, {ai_count} AI)")
+    
+    def __len__(self):
+        return self.total_samples
+    
+    def __getitem__(self, idx):
+        # Find which file this index belongs to
+        for offset, pf, keep_indices in self.file_offsets:
+            if idx < offset + len(keep_indices):
+                local_idx = idx - offset
+                row_idx = keep_indices[local_idx]
+                
+                # Load the specific row
+                df = pd.read_parquet(pf, columns=['image', 'label'])
+                row = df.iloc[row_idx]
+                
+                label = int(row['label'])
+                img_bytes = row['image']['bytes']
+                
+                img = Image.open(io.BytesIO(img_bytes))
+                if img.mode != 'RGB':
+                    img = img.convert('RGB')
+                
+                if self.transform:
+                    img = self.transform(img)
+                
+                return img, torch.tensor(label, dtype=torch.long)
+        
+        raise IndexError(f"Index {idx} out of range")
+
+
 def create_model(model_name: str, num_classes: int, pretrained: bool = True) -> nn.Module:
     """Create a timm model with custom head."""
     model = timm.create_model(model_name, pretrained=pretrained, num_classes=num_classes)
@@ -262,6 +374,11 @@ def main():
     parser.add_argument("--grad-checkpoint", action="store_true", help="Enable gradient checkpointing (saves VRAM, slower)")
     parser.add_argument("--precision", type=str, default="fp16", choices=["fp32", "fp16", "bf16"], help="Mixed precision")
     parser.add_argument("--img-size", type=int, default=224, help="Input image size (192 saves VRAM)")
+    # New arguments for parquet and checkpoint management
+    parser.add_argument("--parquet-format", action="store_true", help="Use parquet format dataset (train-*.parquet, validation-*.parquet)")
+    parser.add_argument("--checkpoint-interval", type=int, default=1, help="Save checkpoint every N epochs")
+    parser.add_argument("--early-stopping-patience", type=int, default=3, help="Early stopping patience (epochs without improvement)")
+    parser.add_argument("--early-stopping-metric", type=str, default="auc", choices=["auc", "acc", "loss"], help="Metric for early stopping")
     args = parser.parse_args()
     
     device = torch.device(args.device)
@@ -283,7 +400,12 @@ def main():
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
     
-    if args.task == "binary":
+    if args.parquet_format:
+        # Use parquet dataset
+        train_ds = ParquetDataset(args.data_dir, "train", transform=train_transform, max_samples_per_class=args.max_samples)
+        val_ds = ParquetDataset(args.data_dir, "val", transform=val_transform, max_samples_per_class=args.max_samples)
+        num_classes = 2
+    elif args.task == "binary":
         train_ds = AIImageDataset(args.data_dir, "train", transform=train_transform, max_samples_per_class=args.max_samples)
         val_ds = AIImageDataset(args.data_dir, "val", transform=val_transform, max_samples_per_class=args.max_samples)
         num_classes = 2
@@ -293,14 +415,23 @@ def main():
         num_classes = len(args.generators)
     
     # Handle class imbalance
-    labels = [s[1] for s in train_ds.samples]
-    class_counts = np.bincount(labels)
-    weights = 1.0 / torch.tensor(class_counts, dtype=torch.float)
-    sample_weights = weights[labels]
-    sampler = WeightedRandomSampler(sample_weights, len(sample_weights), replacement=True)
+    if hasattr(train_ds, 'samples'):
+        labels = [s[1] for s in train_ds.samples]
+    else:
+        # For ParquetDataset, we need to compute labels differently
+        # We'll use a balanced sampler since parquet is already balanced
+        labels = None
+    
+    if labels is not None:
+        class_counts = np.bincount(labels)
+        weights = 1.0 / torch.tensor(class_counts, dtype=torch.float)
+        sample_weights = weights[labels]
+        sampler = WeightedRandomSampler(sample_weights, len(sample_weights), replacement=True)
+    else:
+        sampler = None
     
     train_loader = DataLoader(train_ds, batch_size=args.batch_size, sampler=sampler, 
-                             num_workers=args.num_workers, pin_memory=True, drop_last=True)
+                             num_workers=args.num_workers, pin_memory=True, drop_last=True, shuffle=(sampler is None))
     val_loader = DataLoader(val_ds, batch_size=args.batch_size, shuffle=False,
                            num_workers=args.num_workers, pin_memory=True)
     
@@ -345,15 +476,35 @@ def main():
     elif use_amp:
         print("Using fp16 mixed precision with GradScaler")
     
-    # Training loop
+    # Training loop setup
     best_auc = 0
+    best_loss = float('inf')
+    best_acc = 0
+    epochs_no_improve = 0
     os.makedirs(args.output_dir, exist_ok=True)
     
     accum_steps = max(1, args.accum_steps)
     effective_batch = args.batch_size * accum_steps
     print(f"Effective batch size: {effective_batch} (batch={args.batch_size} x accum={accum_steps})")
     
-    for epoch in range(args.epochs):
+    start_epoch = 0
+    # Resume logic
+    if args.resume:
+        checkpoint = torch.load(args.resume, map_location=device)
+        model.load_state_dict(checkpoint["model_state_dict"])
+        if "optimizer_state_dict" in checkpoint:
+            optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+        if "epoch" in checkpoint:
+            start_epoch = checkpoint["epoch"] + 1
+        if "best_auc" in checkpoint:
+            best_auc = checkpoint["best_auc"]
+        if "best_loss" in checkpoint:
+            best_loss = checkpoint["best_loss"]
+        if "best_acc" in checkpoint:
+            best_acc = checkpoint["best_acc"]
+        print(f"Resumed from epoch {start_epoch}, best_auc={best_auc:.4f}")
+    
+    for epoch in range(start_epoch, args.epochs):
         print(f"\nEpoch {epoch+1}/{args.epochs}")
         
         train_loss, train_acc = train_epoch(model, train_loader, criterion, optimizer, device, scaler, accum_steps, args.precision)
@@ -362,23 +513,84 @@ def main():
         print(f"Train: Loss={train_loss:.4f}, Acc={train_acc:.4f}")
         print(f"Val:   Loss={val_loss:.4f}, Acc={val_acc:.4f}, AUC={val_auc:.4f}")
         
-        if val_auc > best_auc:
+        # Determine improvement
+        improved = False
+        if args.early_stopping_metric == "auc" and val_auc > best_auc:
             best_auc = val_auc
+            improved = True
+        elif args.early_stopping_metric == "loss" and val_loss < best_loss:
+            best_loss = val_loss
+            improved = True
+        elif args.early_stopping_metric == "acc" and val_acc > best_acc:
+            best_acc = val_acc
+            improved = True
+        
+        if improved:
+            epochs_no_improve = 0
+            # Save best model
             checkpoint_path = Path(args.output_dir) / f"best_{args.model}_{args.task}.pt"
             torch.save({
                 "model_state_dict": model.state_dict(),
                 "optimizer_state_dict": optimizer.state_dict(),
                 "epoch": epoch,
                 "val_auc": val_auc,
+                "val_loss": val_loss,
+                "val_acc": val_acc,
+                "best_auc": best_auc,
+                "best_loss": best_loss,
+                "best_acc": best_acc,
                 "model_name": args.model,
                 "task": args.task,
                 "generators": args.generators if args.task == "generator" else None,
             }, checkpoint_path)
             print(f"Saved best model to {checkpoint_path}")
+        else:
+            epochs_no_improve += 1
+            print(f"No improvement for {epochs_no_improve} epoch(s)")
+        
+        # Save checkpoint at interval
+        if (epoch + 1) % args.checkpoint_interval == 0:
+            checkpoint_path = Path(args.output_dir) / f"epoch_{epoch+1}_{args.model}_{args.task}.pt"
+            torch.save({
+                "model_state_dict": model.state_dict(),
+                "optimizer_state_dict": optimizer.state_dict(),
+                "epoch": epoch,
+                "val_auc": val_auc,
+                "val_loss": val_loss,
+                "val_acc": val_acc,
+                "model_name": args.model,
+                "task": args.task,
+                "generators": args.generators if args.task == "generator" else None,
+            }, checkpoint_path)
+            print(f"Saved checkpoint to {checkpoint_path}")
+        
+        # Always save last checkpoint for resume
+        last_path = Path(args.output_dir) / f"last_{args.model}_{args.task}.pt"
+        torch.save({
+            "model_state_dict": model.state_dict(),
+            "optimizer_state_dict": optimizer.state_dict(),
+            "epoch": epoch,
+            "val_auc": val_auc,
+            "val_loss": val_loss,
+            "val_acc": val_acc,
+            "best_auc": best_auc,
+            "best_loss": best_loss,
+            "best_acc": best_acc,
+            "model_name": args.model,
+            "task": args.task,
+            "generators": args.generators if args.task == "generator" else None,
+        }, last_path)
+        
+        # Early stopping
+        if epochs_no_improve >= args.early_stopping_patience:
+            print(f"Early stopping triggered after {epochs_no_improve} epochs without improvement")
+            break
         
         scheduler.step()
     
     print(f"\nBest validation AUC: {best_auc:.4f}")
+    print(f"Best validation Loss: {best_loss:.4f}")
+    print(f"Best validation Acc: {best_acc:.4f}")
     
     # Final evaluation with classification report
     val_loss, val_acc, val_auc, preds, labels = evaluate(model, val_loader, criterion, device, args.precision)
