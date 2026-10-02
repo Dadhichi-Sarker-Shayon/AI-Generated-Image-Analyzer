@@ -7,6 +7,7 @@ from .analysis.analyzer import SignalAnalyzer
 from .detectors import (
     FrequencyDetector, ClipZeroShotDetector, EnsembleDetector,
     create_trained_detectors,
+    ExifForensicsDetector, PatchCNNDetector, ModelSpecificLatticeDetector,
 )
 from .attribution import attribute
 from .explain.findings import build_findings
@@ -27,6 +28,10 @@ class AIImageAnalyzer:
         generator_checkpoint: Optional[str] = None,
         attribution_checkpoint: Optional[str] = None,
         trained_device: str = "cpu",
+        # New forensic detectors (enabled by default)
+        use_exif: bool = True,
+        use_patch_cnn: bool = True,
+        use_model_lattice: bool = True,
     ):
         if isinstance(config, (str, Path)):
             base_config = AnalysisConfig.from_yaml(config)
@@ -47,6 +52,12 @@ class AIImageAnalyzer:
         self.detectors = [FrequencyDetector(self.config)]
         if use_clip:
             self.detectors.append(ClipZeroShotDetector(self.config))
+        if use_exif:
+            self.detectors.append(ExifForensicsDetector())
+        if use_patch_cnn:
+            self.detectors.append(PatchCNNDetector(self.config))
+        if use_model_lattice:
+            self.detectors.append(ModelSpecificLatticeDetector(self.config))
         
         # Add trained detectors if checkpoints provided
         trained = create_trained_detectors(
@@ -59,9 +70,13 @@ class AIImageAnalyzer:
         
         # Build ensemble weights: heuristic + trained
         all_weights = self.config.detector_weights.copy()
-        for d in trained:
+        for d in self.detectors:
             if d.name not in all_weights:
-                all_weights[d.name] = 1.0  # Default weight for trained detectors
+                all_weights[d.name] = 1.0  # Default weight for new detectors
+        # Give trained detectors higher default weight
+        for d in self.detectors:
+            if "trained" in d.name and d.name not in self.config.detector_weights:
+                all_weights[d.name] = 1.5
         
         self.ensemble = EnsembleDetector(
             self.detectors,

@@ -11,6 +11,9 @@ from .trained import (
     TrainedAttributionClassifier,
     create_trained_detectors,
 )
+from .exif_forensics import ExifForensicsDetector
+from .patch_cnn import PatchCNNDetector
+from .model_lattice import ModelSpecificLatticeDetector
 
 __all__ = [
     "BaseDetector",
@@ -25,4 +28,7 @@ __all__ = [
     "TrainedGeneratorDetector",
     "TrainedAttributionClassifier",
     "create_trained_detectors",
+    "ExifForensicsDetector",
+    "PatchCNNDetector",
+    "ModelSpecificLatticeDetector",
 ]
