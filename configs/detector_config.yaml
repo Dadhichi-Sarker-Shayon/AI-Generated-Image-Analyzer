@@ -1,5 +1,11 @@
-max_analysis_dim: 1024
+# Performance settings
+max_analysis_dim: 512
 tile_size: 64
+enable_fractal: false
+enable_glcm: false
+enable_color_analysis: true
+enable_jpeg_analysis: true
+use_onnx_clip: false
 
 frequency:
   exponent_center: -2.3

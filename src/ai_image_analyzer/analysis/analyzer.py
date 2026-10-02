@@ -46,9 +46,27 @@ class SignalAnalyzer:
             tile_size=self.config.tile_size,
             sensor_period_db_natural=self.config.sensor_period_db_natural,
         )
-        texture = compute_texture_metrics(signals)
-        color = compute_color_metrics(signals)
-        jpeg = compute_jpeg_metrics(source_meta.get("file_bytes") if source_meta else None)
+        
+        # Conditional expensive analyses
+        if self.config.enable_fractal or self.config.enable_glcm:
+            texture = compute_texture_metrics(signals, enable_fractal=self.config.enable_fractal, enable_glcm=self.config.enable_glcm)
+        else:
+            # Fast path: minimal texture metrics
+            texture = TextureMetrics(
+                lbp_entropy=0.0, lbp_uniform_ratio=1.0,
+                glcm_contrast=0.0, glcm_energy=0.0, glcm_homogeneity=0.0,
+                fractal_dimension=None
+            )
+        
+        if self.config.enable_color_analysis:
+            color = compute_color_metrics(signals)
+        else:
+            color = ColorMetrics(banded_fraction=0.0, colorfulness=0.0, saturation_std=0.0, gray_region_rb_cast=0.0)
+        
+        if self.config.enable_jpeg_analysis:
+            jpeg = compute_jpeg_metrics(source_meta.get("file_bytes") if source_meta else None)
+        else:
+            jpeg = JpegMetrics(is_jpeg=False, estimated_quality=None, quantization_table_source=None, re_encode_size_ratio=None, histogram_quantization_step=None)
 
         return AnalysisData(
             image_meta=source_meta or {},

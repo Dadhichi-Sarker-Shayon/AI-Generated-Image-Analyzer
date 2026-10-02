@@ -17,7 +17,7 @@ class TextureMetrics(BaseModel):
     fractal_dimension: float | None
 
 
-def compute_texture_metrics(signals: ImageSignals, max_dim: int = 384) -> TextureMetrics:
+def compute_texture_metrics(signals: ImageSignals, max_dim: int = 384, enable_fractal: bool = False, enable_glcm: bool = False) -> TextureMetrics:
     gray = signals.gray
     h, w = gray.shape
 
@@ -30,7 +30,7 @@ def compute_texture_metrics(signals: ImageSignals, max_dim: int = 384) -> Textur
     else:
         gray_small = gray.astype(np.uint8)
 
-    # LBP
+    # LBP (fast)
     lbp = local_binary_pattern(gray_small, P=8, R=1, method="uniform")
     hist, _ = np.histogram(lbp.ravel(), bins=256, range=(0, 256))
     hist = hist.astype(np.float64)
@@ -38,23 +38,29 @@ def compute_texture_metrics(signals: ImageSignals, max_dim: int = 384) -> Textur
     if hist_sum > 0:
         hist_norm = hist / hist_sum
         entropy = -np.sum(hist_norm[hist_norm > 0] * np.log2(hist_norm[hist_norm > 0])) / np.log2(256)
-        uniform_ratio = float(hist_norm[:37].sum())  # 37 uniform patterns for P=8
+        uniform_ratio = float(hist_norm[:37].sum())
     else:
         entropy = 0.0
         uniform_ratio = 1.0
 
-    # GLCM (levels=32 for speed)
-    levels = 32
-    glcm_gray = (gray_small / 255 * (levels - 1)).astype(np.uint8)
-    glcm = graycomatrix(glcm_gray, distances=[1], angles=[0, np.pi/4, np.pi/2, 3*np.pi/4], levels=levels, symmetric=True, normed=True)
-    contrast = float(np.mean(graycoprops(glcm, "contrast")))
-    energy = float(np.mean(graycoprops(glcm, "energy")))
-    homogeneity = float(np.mean(graycoprops(glcm, "homogeneity")))
+    # GLCM (optional - expensive)
+    if enable_glcm:
+        levels = 32
+        glcm_gray = (gray_small / 255 * (levels - 1)).astype(np.uint8)
+        glcm = graycomatrix(glcm_gray, distances=[1], angles=[0, np.pi/4, np.pi/2, 3*np.pi/4], levels=levels, symmetric=True, normed=True)
+        contrast = float(np.mean(graycoprops(glcm, "contrast")))
+        energy = float(np.mean(graycoprops(glcm, "energy")))
+        homogeneity = float(np.mean(graycoprops(glcm, "homogeneity")))
+    else:
+        contrast = energy = homogeneity = 0.0
 
-    # Fractal dimension via box-counting on edges
-    edges = sobel(gray_small)
-    edge_thresh = edges > (0.3 * edges.max()) if edges.max() > 0 else edges > 0
-    fractal_dim = _box_counting_dimension(edge_thresh)
+    # Fractal dimension (optional - expensive)
+    if enable_fractal:
+        edges = sobel(gray_small)
+        edge_thresh = edges > (0.3 * edges.max()) if edges.max() > 0 else edges > 0
+        fractal_dim = _box_counting_dimension(edge_thresh)
+    else:
+        fractal_dim = None
 
     return TextureMetrics(
         lbp_entropy=float(entropy),

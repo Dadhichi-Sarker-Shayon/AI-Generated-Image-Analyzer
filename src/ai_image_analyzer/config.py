@@ -7,8 +7,14 @@ import yaml
 
 @dataclasses.dataclass(frozen=True)
 class AnalysisConfig:
-    max_analysis_dim: int = 1024
+    # Performance settings
+    max_analysis_dim: int = 512
     tile_size: int = 64
+    enable_fractal: bool = False
+    enable_glcm: bool = False
+    enable_color_analysis: bool = True
+    enable_jpeg_analysis: bool = True
+    use_onnx_clip: bool = False
 
     # Frequency analysis
     exponent_center: float = -2.3
