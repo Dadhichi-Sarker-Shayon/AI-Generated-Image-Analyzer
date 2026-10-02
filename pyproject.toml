@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ai-image-analyzer"
+version = "0.1.0"
+description = "Detect AI-generated images and explain exactly why, with pixel-level forensic metrics (FFT/DCT, noise fingerprints, texture, color, JPEG analysis)."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "AI Image Analyzer" }]
+keywords = ["image-forensics", "ai-detection", "deepfake", "spectral-analysis"]
+classifiers = [
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Graphics",
+    "Topic :: Scientific/Engineering :: Image Processing",
+]
+dependencies = [
+    "numpy>=1.26",
+    "scipy>=1.11",
+    "Pillow>=10.0",
+    "opencv-python-headless>=4.8",
+    "scikit-image>=0.21",
+    "pydantic>=2.0",
+    "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+ml = ["torch>=2.1", "transformers>=4.40"]
+onnx = ["onnx>=1.15", "onnxruntime>=1.17"]
+viz = ["matplotlib>=3.7"]
+dev = ["pytest>=7.4"]
+
+[project.scripts]
+ai-image-analyzer = "ai_image_analyzer.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

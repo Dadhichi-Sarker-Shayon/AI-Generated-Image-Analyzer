@@ -1,0 +1,389 @@
+{
+  "real_nature_1": {
+    "ai_probability": 0.18420337438583373,
+    "verdict": "likely_natural",
+    "attribution": "gan",
+    "attribution_scores": {
+      "gan": 0.6057346116928828,
+      "diffusion": 0.26716719071070355,
+      "vae": 0.0
+    },
+    "findings_count": 6,
+    "key_findings": [
+      {
+        "code": "FFT_PEAKS",
+        "title": "Significant spectral peaks",
+        "severity": "strong",
+        "supports": "ai"
+      },
+      {
+        "code": "FFT_LATTICE",
+        "title": "Lattice artifact detected",
+        "severity": "strong",
+        "supports": "ai"
+      },
+      {
+        "code": "SENSOR_PERIOD_LOW",
+        "title": "Low sensor-pattern periodicity",
+        "severity": "info",
+        "supports": "ai"
+      },
+      {
+        "code": "LBP_ENTROPY_LOW",
+        "title": "Low LBP texture entropy",
+        "severity": "info",
+        "supports": "ai"
+      },
+      {
+        "code": "COLOR_BANDING",
+        "title": "Color quantization banding",
+        "severity": "warning",
+        "supports": "ai"
+      }
+    ]
+  },
+  "real_city_1": {
+    "ai_probability": 0.3778623104095459,
+    "verdict": "inconclusive",
+    "attribution": "gan",
+    "attribution_scores": {
+      "gan": 1.0,
+      "diffusion": 0.43328424294789636,
+      "vae": 0.0
+    },
+    "findings_count": 5,
+    "key_findings": [
+      {
+        "code": "FFT_PEAKS",
+        "title": "Significant spectral peaks",
+        "severity": "strong",
+        "supports": "ai"
+      },
+      {
+        "code": "FFT_LATTICE",
+        "title": "Lattice artifact detected",
+        "severity": "strong",
+        "supports": "ai"
+      },
+      {
+        "code": "LBP_ENTROPY_LOW",
+        "title": "Low LBP texture entropy",
+        "severity": "info",
+        "supports": "ai"
+      },
+      {
+        "code": "COLOR_BANDING",
+        "title": "Color quantization banding",
+        "severity": "warning",
+        "supports": "ai"
+      },
+      {
+        "code": "JPEG_QUANT_STEP",
+        "title": "Histogram quantization step detected",
+        "severity": "info",
+        "supports": "neutral"
+      }
+    ]
+  },
+  "real_portrait_1": {
+    "ai_probability": 0.5194802134690318,
+    "verdict": "inconclusive",
+    "attribution": "gan",
+    "attribution_scores": {
+      "gan": 0.7820073899768647,
+      "diffusion": 0.03204986763497194,
+      "vae": 0.1386988449453686
+    },
+    "findings_count": 6,
+    "key_findings": [
+      {
+        "code": "FFT_PEAKS",
+        "title": "Significant spectral peaks",
+        "severity": "strong",
+        "supports": "ai"
+      },
+      {
+        "code": "FFT_LATTICE",
+        "title": "Lattice artifact detected",
+        "severity": "strong",
+        "supports": "ai"
+      },
+      {
+        "code": "SENSOR_PERIOD_LOW",
+        "title": "Low sensor-pattern periodicity",
+        "severity": "info",
+        "supports": "ai"
+      },
+      {
+        "code": "LBP_ENTROPY_LOW",
+        "title": "Low LBP texture entropy",
+        "severity": "info",
+        "supports": "ai"
+      },
+      {
+        "code": "COLOR_BANDING",
+        "title": "Color quantization banding",
+        "severity": "warning",
+        "supports": "ai"
+      }
+    ]
+  },
+  "real_landscape_1": {
+    "ai_probability": 0.5645044383068044,
+    "verdict": "inconclusive",
+    "attribution": "gan",
+    "attribution_scores": {
+      "gan": 1.0,
+      "diffusion": 0.07804475103815398,
+      "vae": 0.0
+    },
+    "findings_count": 6,
+    "key_findings": [
+      {
+        "code": "FFT_PEAKS",
+        "title": "Significant spectral peaks",
+        "severity": "strong",
+        "supports": "ai"
+      },
+      {
+        "code": "FFT_LATTICE",
+        "title": "Lattice artifact detected",
+        "severity": "strong",
+        "supports": "ai"
+      },
+      {
+        "code": "SENSOR_PERIOD_LOW",
+        "title": "Low sensor-pattern periodicity",
+        "severity": "info",
+        "supports": "ai"
+      },
+      {
+        "code": "LBP_ENTROPY_LOW",
+        "title": "Low LBP texture entropy",
+        "severity": "info",
+        "supports": "ai"
+      },
+      {
+        "code": "FRACTAL_LOW",
+        "title": "Low fractal dimension (over-smooth)",
+        "severity": "warning",
+        "supports": "ai"
+      }
+    ]
+  },
+  "ai_style_1": {
+    "ai_probability": 0.7482321977615356,
+    "verdict": "likely_ai",
+    "attribution": "gan",
+    "attribution_scores": {
+      "gan": 1.0,
+      "diffusion": 0.018058641192813717,
+      "vae": 0.4529418157491212
+    },
+    "findings_count": 9,
+    "key_findings": [
+      {
+        "code": "FFT_DEEP",
+        "title": "Steep power-law spectrum",
+        "severity": "info",
+        "supports": "natural"
+      },
+      {
+        "code": "FFT_PEAKS",
+        "title": "Significant spectral peaks",
+        "severity": "strong",
+        "supports": "ai"
+      },
+      {
+        "code": "FFT_LATTICE",
+        "title": "Lattice artifact detected",
+        "severity": "strong",
+        "supports": "ai"
+      },
+      {
+        "code": "SENSOR_PERIOD_LOW",
+        "title": "Low sensor-pattern periodicity",
+        "severity": "info",
+        "supports": "ai"
+      },
+      {
+        "code": "NOISE_LOW",
+        "title": "Very low noise level",
+        "severity": "info",
+        "supports": "ai"
+      }
+    ]
+  },
+  "ai_style_2": {
+    "ai_probability": 0.28985536779676163,
+    "verdict": "inconclusive",
+    "attribution": "gan",
+    "attribution_scores": {
+      "gan": 0.877044677734375,
+      "diffusion": 0.3825982908407847,
+      "vae": 0.0
+    },
+    "findings_count": 6,
+    "key_findings": [
+      {
+        "code": "FFT_PEAKS",
+        "title": "Significant spectral peaks",
+        "severity": "strong",
+        "supports": "ai"
+      },
+      {
+        "code": "FFT_LATTICE",
+        "title": "Lattice artifact detected",
+        "severity": "strong",
+        "supports": "ai"
+      },
+      {
+        "code": "SENSOR_PERIOD_LOW",
+        "title": "Low sensor-pattern periodicity",
+        "severity": "info",
+        "supports": "ai"
+      },
+      {
+        "code": "LBP_ENTROPY_LOW",
+        "title": "Low LBP texture entropy",
+        "severity": "info",
+        "supports": "ai"
+      },
+      {
+        "code": "COLOR_BANDING",
+        "title": "Color quantization banding",
+        "severity": "warning",
+        "supports": "ai"
+      }
+    ]
+  },
+  "demo_natural": {
+    "ai_probability": 0.11466494287763324,
+    "verdict": "likely_natural",
+    "attribution": "gan",
+    "attribution_scores": {
+      "gan": 0.43275299072265627,
+      "diffusion": 0.3709732492764791,
+      "vae": 0.0
+    },
+    "findings_count": 6,
+    "key_findings": [
+      {
+        "code": "FFT_PEAKS",
+        "title": "Significant spectral peaks",
+        "severity": "strong",
+        "supports": "ai"
+      },
+      {
+        "code": "FFT_LATTICE",
+        "title": "Lattice artifact detected",
+        "severity": "strong",
+        "supports": "ai"
+      },
+      {
+        "code": "NOISE_UNIFORM",
+        "title": "Artificially uniform noise",
+        "severity": "warning",
+        "supports": "ai"
+      },
+      {
+        "code": "SENSOR_PERIOD_LOW",
+        "title": "Low sensor-pattern periodicity",
+        "severity": "info",
+        "supports": "ai"
+      },
+      {
+        "code": "LBP_ENTROPY_LOW",
+        "title": "Low LBP texture entropy",
+        "severity": "info",
+        "supports": "ai"
+      }
+    ]
+  },
+  "demo_diffusion": {
+    "ai_probability": 0.5780242085456848,
+    "verdict": "inconclusive",
+    "attribution": "gan",
+    "attribution_scores": {
+      "gan": 0.7413978894551595,
+      "diffusion": 0.5,
+      "vae": 0.0
+    },
+    "findings_count": 7,
+    "key_findings": [
+      {
+        "code": "FFT_SHALLOW",
+        "title": "Shallow power-law spectrum",
+        "severity": "strong",
+        "supports": "ai"
+      },
+      {
+        "code": "FFT_PEAKS",
+        "title": "Significant spectral peaks",
+        "severity": "strong",
+        "supports": "ai"
+      },
+      {
+        "code": "FFT_LATTICE",
+        "title": "Lattice artifact detected",
+        "severity": "strong",
+        "supports": "ai"
+      },
+      {
+        "code": "NOISE_UNIFORM",
+        "title": "Artificially uniform noise",
+        "severity": "warning",
+        "supports": "ai"
+      },
+      {
+        "code": "SENSOR_PERIOD_LOW",
+        "title": "Low sensor-pattern periodicity",
+        "severity": "info",
+        "supports": "ai"
+      }
+    ]
+  },
+  "demo_gan": {
+    "ai_probability": 0.28048282861709595,
+    "verdict": "inconclusive",
+    "attribution": "gan",
+    "attribution_scores": {
+      "gan": 0.7479542096455891,
+      "diffusion": 0.37014710406462353,
+      "vae": 0.0
+    },
+    "findings_count": 6,
+    "key_findings": [
+      {
+        "code": "FFT_PEAKS",
+        "title": "Significant spectral peaks",
+        "severity": "strong",
+        "supports": "ai"
+      },
+      {
+        "code": "FFT_LATTICE",
+        "title": "Lattice artifact detected",
+        "severity": "strong",
+        "supports": "ai"
+      },
+      {
+        "code": "NOISE_UNIFORM",
+        "title": "Artificially uniform noise",
+        "severity": "warning",
+        "supports": "ai"
+      },
+      {
+        "code": "SENSOR_PERIOD_LOW",
+        "title": "Low sensor-pattern periodicity",
+        "severity": "info",
+        "supports": "ai"
+      },
+      {
+        "code": "LBP_ENTROPY_LOW",
+        "title": "Low LBP texture entropy",
+        "severity": "info",
+        "supports": "ai"
+      }
+    ]
+  }
+}

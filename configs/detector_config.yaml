@@ -1,0 +1,37 @@
+max_analysis_dim: 1024
+tile_size: 64
+
+frequency:
+  exponent_center: -2.3
+  exponent_band: 0.35
+  peak_db_threshold: 10.0
+  lattice_db_threshold: 8.0
+  lattice_periods: [2, 3, 4, 5, 6, 8, 10]
+  hf_cutoff: 0.35
+
+noise:
+  noise_sigma_low: 1.5
+  noise_sigma_high: 18.0
+  uniformity_ai: 0.93
+  sensor_period_db_natural: 8.0
+
+texture:
+  lbp_entropy_ai: 0.90
+  glcm_contrast_ai: 0.6
+  fractal_dim_low: 1.15
+  fractal_dim_high: 1.75
+
+color:
+  banded_fraction_ai: 0.05
+  cast_threshold: 3.0
+
+ensemble:
+  weights:
+    frequency: 0.5
+    clip: 0.5
+  verdict_ai: 0.60
+  verdict_natural: 0.25
+
+clip:
+  model_name: openai/clip-vit-base-patch32
+  device: cpu

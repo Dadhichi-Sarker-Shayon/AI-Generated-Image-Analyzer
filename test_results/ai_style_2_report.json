@@ -1,0 +1,260 @@
+{
+  "version": "0.1.0",
+  "generated_at": "2026-10-02T08:29:56.311249Z",
+  "image": {
+    "filename": "real_test_images/ai_style_2.jpg",
+    "width": 800,
+    "height": 1000,
+    "mode": "RGB",
+    "file_bytes": 234512
+  },
+  "metrics": {
+    "frequency": {
+      "power_law_exponent": -2.2723807035461854,
+      "radial_profile": [
+        [
+          0.0029718362352924308,
+          5636913889280.0
+        ],
+        [
+          0.0040936122522252415,
+          5815445487616.0
+        ],
+        [
+          0.0056388239272947855,
+          2801418108928.0
+        ],
+        [
+          0.007767305089960111,
+          1493506195456.0
+        ],
+        [
+          0.010699221883571728,
+          739737337856.0
+        ],
+        [
+          0.014737846342854029,
+          266304962560.0
+        ],
+        [
+          0.020300926290638482,
+          128648830976.0
+        ],
+        [
+          0.027963896397777695,
+          56141639680.0
+        ],
+        [
+          0.03851940007812571,
+          21477025792.0
+        ],
+        [
+          0.053059279052994374,
+          11647720448.0
+        ],
+        [
+          0.07308751143355072,
+          5867659264.0
+        ],
+        [
+          0.10067578042691,
+          2984456960.0
+        ],
+        [
+          0.1386777654043185,
+          1471559424.0
+        ],
+        [
+          0.19102432120203106,
+          827930240.0
+        ],
+        [
+          0.2631300784542379,
+          490845920.0
+        ],
+        [
+          0.3624535229422778,
+          239285856.0
+        ]
+      ],
+      "hf_energy_ratio": 0.0275088082998991,
+      "mid_energy_ratio": 0.11477948725223541,
+      "n_peaks_significant": 20,
+      "max_peak_db": 20.14408302307129,
+      "top_peaks": [
+        {
+          "fx": 0.0225,
+          "fy": -0.448,
+          "db": 12.347143173217773
+        },
+        {
+          "fx": 0.00125,
+          "fy": -0.447,
+          "db": 10.153766632080078
+        },
+        {
+          "fx": -0.0625,
+          "fy": -0.445,
+          "db": 13.340667724609375
+        },
+        {
+          "fx": -0.0075,
+          "fy": -0.443,
+          "db": 12.617586135864258
+        },
+        {
+          "fx": 0.0225,
+          "fy": -0.442,
+          "db": 14.647855758666992
+        }
+      ],
+      "lattice_db": {
+        "2": 1.4663794040679932,
+        "3": 5.090780735015869,
+        "4": 9.680116653442383,
+        "5": 10.942234992980957,
+        "6": 11.84868335723877,
+        "8": 13.473075866699219,
+        "10": 17.13104248046875
+      },
+      "best_lattice_period": 10,
+      "best_lattice_db": 17.13104248046875
+    },
+    "noise": {
+      "noise_sigma": 12.65104866027832,
+      "spatial_uniformity": 0.4151056408882141,
+      "noise_hf_ratio": 0.8606048226356506,
+      "sensor_periodicity_db": 7.510060787200928,
+      "tile_std_cv": 0.5848943591117859
+    },
+    "texture": {
+      "lbp_entropy": 0.40620429943686454,
+      "lbp_uniform_ratio": 1.0,
+      "glcm_contrast": 6.84640362768916,
+      "glcm_energy": 0.11668071403234707,
+      "glcm_homogeneity": 0.5931087082316628,
+      "fractal_dimension": 1.419521919002115
+    },
+    "color": {
+      "banded_fraction": 0.40683336060331105,
+      "colorfulness": 0.1938420534133911,
+      "saturation_std": 0.21602948344153158,
+      "gray_region_rb_cast": -0.0004146690189372748
+    },
+    "jpeg": {
+      "is_jpeg": true,
+      "estimated_quality": 85.0,
+      "quantization_table_source": null,
+      "re_encode_size_ratio": 0.9483224739032544,
+      "histogram_quantization_step": 10.0
+    }
+  },
+  "detectors": {
+    "frequency": {
+      "name": "frequency",
+      "status": "ok",
+      "score": 0.28985536779676163,
+      "confidence": 0.44,
+      "reasoning": [
+        "Significant spectral peaks (20 peaks >10.0dB, max 20.1dB)",
+        "Lattice artifact at period 10px (17.1dB)"
+      ],
+      "features": {
+        "exponent": -2.2723807035461854,
+        "max_peak_db": 20.14408302307129,
+        "best_lattice_db": 17.13104248046875,
+        "hf_energy_ratio": 0.0275088082998991
+      }
+    },
+    "ensemble": {
+      "name": "ensemble",
+      "status": "ok",
+      "score": 0.28985536779676163,
+      "confidence": 0.44,
+      "reasoning": [
+        "Ensemble score: 0.290 (verdict: inconclusive)",
+        "  frequency: 0.290 (w=0.50) [0.44]"
+      ],
+      "features": {
+        "verdict": "inconclusive",
+        "sub_detectors": {
+          "frequency": 0.28985536779676163
+        }
+      }
+    }
+  },
+  "ai_probability": 0.28985536779676163,
+  "verdict": "inconclusive",
+  "attribution": {
+    "family": "gan",
+    "family_scores": {
+      "gan": 0.877044677734375,
+      "diffusion": 0.3825982908407847,
+      "vae": 0.0
+    },
+    "specific_model": "unknown (heuristic attribution; plug in trained classifier for model-level attribution)",
+    "reasoning": [
+      "GAN score: 0.877 (lattice=0.80, peaks=1.00)",
+      "Diffusion score: 0.383 (shallow_exp=0.00, mid_plateau=0.77)",
+      "VAE score: 0.000 (smooth=0.00, low_noise=0.00)",
+      "Best match: gan (0.877)"
+    ]
+  },
+  "findings": [
+    {
+      "code": "FFT_PEAKS",
+      "title": "Significant spectral peaks",
+      "severity": "strong",
+      "supports": "ai",
+      "value": "20 peaks, max 20.1 dB",
+      "threshold": ">10.0 dB above median",
+      "explanation": "Found 20 localized spectral peaks exceeding 10.0 dB above background. Such peaks suggest periodic upsampling artifacts (transposed convolution lattices) common in GAN architectures."
+    },
+    {
+      "code": "FFT_LATTICE",
+      "title": "Lattice artifact detected",
+      "severity": "strong",
+      "supports": "ai",
+      "value": "period=10px, 17.1 dB",
+      "threshold": ">8.0 dB",
+      "explanation": "Energy concentrated at frequency grid consistent with period-10 upsampling lattice (17.1 dB). Strongly indicative of transposed convolution in GAN generators."
+    },
+    {
+      "code": "SENSOR_PERIOD_LOW",
+      "title": "Low sensor-pattern periodicity",
+      "severity": "info",
+      "supports": "ai",
+      "value": "7.5 dB",
+      "threshold": "< 8.0 dB",
+      "explanation": "Noise residual lacks the period-2 Bayer CFA periodicity (7.5 dB). Consistent with computer-generated imagery lacking sensor hardware fingerprint."
+    },
+    {
+      "code": "LBP_ENTROPY_LOW",
+      "title": "Low LBP texture entropy",
+      "severity": "info",
+      "supports": "ai",
+      "value": "0.406",
+      "threshold": "< 0.90",
+      "explanation": "Local Binary Pattern entropy (0.406) below natural texture complexity. Synthetic images often have overly regular micro-texture."
+    },
+    {
+      "code": "COLOR_BANDING",
+      "title": "Color quantization banding",
+      "severity": "warning",
+      "supports": "ai",
+      "value": "0.407",
+      "threshold": ">0.05",
+      "explanation": "Detected banding in smooth regions (40.7% of smooth pixels). Suggests limited color depth or posterization from generation pipeline."
+    },
+    {
+      "code": "JPEG_QUANT_STEP",
+      "title": "Histogram quantization step detected",
+      "severity": "info",
+      "supports": "neutral",
+      "value": "step=10.0",
+      "threshold": "> 1",
+      "explanation": "Grayscale histogram shows regular spacing of 10.0 levels, suggesting quantization/posterization."
+    }
+  ],
+  "explanation": "**Verdict: Inconclusive** (AI probability 29.0%)\n\n**Model family attribution:** GAN (score: 0.877)\n*Specific model: unknown (heuristic attribution; plug in trained classifier for model-level attribution)*\n\n**Key evidence for AI generation:**\n- Significant spectral peaks: Found 20 localized spectral peaks exceeding 10.0 dB above background. Such peaks suggest periodic upsampling artifacts (transposed convolution lattices) common in GAN architectures.\n- Lattice artifact detected: Energy concentrated at frequency grid consistent with period-10 upsampling lattice (17.1 dB). Strongly indicative of transposed convolution in GAN generators.\n- Color quantization banding: Detected banding in smooth regions (40.7% of smooth pixels). Suggests limited color depth or posterization from generation pipeline.\n\n**Metric summary:**\n- Power-law exponent (alpha): -2.27\n- Spectral peaks >10dB: 20\n- Lattice artifact: period 10px (17.1 dB)\n- HF energy ratio: 0.0275\n- Noise sigma: 12.65\n- Noise spatial uniformity: 0.415\n- Sensor periodicity: 7.5 dB\n- Fractal dimension: 1.420\n- Color banding fraction: 0.407\n\n*Disclaimer: This analysis uses heuristic forensic metrics. For production use, replace heuristic detectors with trained classifiers on representative data. Heuristic thresholds are starting points and may require calibration.*"
+}
