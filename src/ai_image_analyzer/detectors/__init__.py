@@ -3,6 +3,14 @@ from .base import BaseDetector, DetectorResult, DetectorStatus
 from .frequency_detector import FrequencyDetector
 from .clip_detector import ClipZeroShotDetector
 from .ensemble import EnsembleDetector
+from .trained import (
+    TrainedViTDetector,
+    TrainedResNetDetector,
+    TrainedEfficientNetDetector,
+    TrainedGeneratorDetector,
+    TrainedAttributionClassifier,
+    create_trained_detectors,
+)
 
 __all__ = [
     "BaseDetector",
@@ -11,4 +19,10 @@ __all__ = [
     "FrequencyDetector",
     "ClipZeroShotDetector",
     "EnsembleDetector",
+    "TrainedViTDetector",
+    "TrainedResNetDetector",
+    "TrainedEfficientNetDetector",
+    "TrainedGeneratorDetector",
+    "TrainedAttributionClassifier",
+    "create_trained_detectors",
 ]

@@ -4,7 +4,10 @@ from typing import Any, Optional
 from .config import AnalysisConfig
 from .io_utils import load_image
 from .analysis.analyzer import SignalAnalyzer
-from .detectors import FrequencyDetector, ClipZeroShotDetector, EnsembleDetector
+from .detectors import (
+    FrequencyDetector, ClipZeroShotDetector, EnsembleDetector,
+    create_trained_detectors,
+)
 from .attribution import attribute
 from .explain.findings import build_findings
 from .explain.report import build_report, AnalysisReport
@@ -19,6 +22,11 @@ class AIImageAnalyzer:
         config: AnalysisConfig | str | Path | None = None,
         use_clip: bool = True,
         clip_device: Optional[str] = None,
+        # Trained model checkpoints (optional)
+        binary_checkpoint: Optional[str] = None,
+        generator_checkpoint: Optional[str] = None,
+        attribution_checkpoint: Optional[str] = None,
+        trained_device: str = "cpu",
     ):
         if isinstance(config, (str, Path)):
             base_config = AnalysisConfig.from_yaml(config)
@@ -39,9 +47,25 @@ class AIImageAnalyzer:
         self.detectors = [FrequencyDetector(self.config)]
         if use_clip:
             self.detectors.append(ClipZeroShotDetector(self.config))
+        
+        # Add trained detectors if checkpoints provided
+        trained = create_trained_detectors(
+            binary_checkpoint=binary_checkpoint,
+            generator_checkpoint=generator_checkpoint,
+            attribution_checkpoint=attribution_checkpoint,
+            device=trained_device,
+        )
+        self.detectors.extend(trained)
+        
+        # Build ensemble weights: heuristic + trained
+        all_weights = self.config.detector_weights.copy()
+        for d in trained:
+            if d.name not in all_weights:
+                all_weights[d.name] = 1.0  # Default weight for trained detectors
+        
         self.ensemble = EnsembleDetector(
             self.detectors,
-            weights=self.config.detector_weights,
+            weights=all_weights,
             verdict_ai=self.config.verdict_ai,
             verdict_natural=self.config.verdict_natural,
         )

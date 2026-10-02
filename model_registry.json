@@ -1,0 +1,23 @@
+{
+  "resnet_drct_v1": {
+    "name": "resnet_drct_v1",
+    "path": "G:\\My Drive\\AI Image analyzer\\checkpoints\\best_resnet_drct.pt",
+    "model_type": "generator",
+    "architecture": "resnet50",
+    "task": "generator",
+    "training_data": "DRCT",
+    "generators": [
+      "midjourney",
+      "stable_diffusion",
+      "dall_e",
+      "other"
+    ],
+    "families": null,
+    "metrics": {
+      "val_auc": 0.92
+    },
+    "created_at": "2026-10-02T09:30:54.079907Z",
+    "file_hash": "",
+    "file_size_mb": 0.0
+  }
+}
