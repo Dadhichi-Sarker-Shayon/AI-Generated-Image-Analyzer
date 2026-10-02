@@ -154,31 +154,45 @@ def create_model(model_name: str, num_classes: int, pretrained: bool = True) -> 
     return model
 
 
-def train_epoch(model, loader, criterion, optimizer, device, scaler=None):
+def train_epoch(model, loader, criterion, optimizer, device, scaler=None, accum_steps=1, precision="fp16"):
     model.train()
     total_loss = 0
     correct = 0
     total = 0
     
-    for images, labels in tqdm(loader, desc="Training", leave=False):
-        images, labels = images.to(device), labels.to(device)
+    optimizer.zero_grad()
+    
+    for step, (images, labels) in enumerate(tqdm(loader, desc="Training", leave=False)):
+        images, labels = images.to(device, non_blocking=True), labels.to(device, non_blocking=True)
         
-        optimizer.zero_grad()
-        
-        if scaler:
+        # Mixed precision
+        if precision == "fp16" and scaler is not None:
             with torch.cuda.amp.autocast():
                 outputs = model(images)
                 loss = criterion(outputs, labels)
+            loss = loss / accum_steps
             scaler.scale(loss).backward()
-            scaler.step(optimizer)
-            scaler.update()
+        elif precision == "bf16":
+            with torch.cuda.amp.autocast(dtype=torch.bfloat16):
+                outputs = model(images)
+                loss = criterion(outputs, labels)
+            loss = loss / accum_steps
+            loss.backward()
         else:
             outputs = model(images)
-            loss = criterion(outputs, labels)
+            loss = criterion(outputs, labels) / accum_steps
             loss.backward()
-            optimizer.step()
         
-        total_loss += loss.item() * images.size(0)
+        # Gradient accumulation
+        if (step + 1) % accum_steps == 0:
+            if precision == "fp16" and scaler is not None:
+                scaler.step(optimizer)
+                scaler.update()
+            else:
+                optimizer.step()
+            optimizer.zero_grad()
+        
+        total_loss += loss.item() * accum_steps * images.size(0)
         _, preds = outputs.max(1)
         correct += preds.eq(labels).sum().item()
         total += labels.size(0)
@@ -186,7 +200,7 @@ def train_epoch(model, loader, criterion, optimizer, device, scaler=None):
     return total_loss / total, correct / total
 
 
-def evaluate(model, loader, criterion, device):
+def evaluate(model, loader, criterion, device, precision="fp16"):
     model.eval()
     total_loss = 0
     correct = 0
@@ -197,9 +211,19 @@ def evaluate(model, loader, criterion, device):
     
     with torch.no_grad():
         for images, labels in tqdm(loader, desc="Evaluating", leave=False):
-            images, labels = images.to(device), labels.to(device)
-            outputs = model(images)
-            loss = criterion(outputs, labels)
+            images, labels = images.to(device, non_blocking=True), labels.to(device, non_blocking=True)
+            
+            if precision == "fp16":
+                with torch.cuda.amp.autocast():
+                    outputs = model(images)
+                    loss = criterion(outputs, labels)
+            elif precision == "bf16":
+                with torch.cuda.amp.autocast(dtype=torch.bfloat16):
+                    outputs = model(images)
+                    loss = criterion(outputs, labels)
+            else:
+                outputs = model(images)
+                loss = criterion(outputs, labels)
             
             total_loss += loss.item() * images.size(0)
             probs = torch.softmax(outputs, dim=1)[:, 1].cpu().numpy()
@@ -219,33 +243,53 @@ def evaluate(model, loader, criterion, device):
 def main():
     parser = argparse.ArgumentParser(description="Train AI image detector")
     parser.add_argument("--data-dir", type=str, required=True, help="Dataset root directory")
-    parser.add_argument("--model", type=str, default="vit_base_patch16_224", help="timm model name")
+    parser.add_argument("--model", type=str, default="efficientnet_b0", help="timm model name (efficientnet_b0, mobilenetv3_small_100, resnet50 for 4GB VRAM)")
     parser.add_argument("--task", type=str, default="binary", choices=["binary", "generator"], 
                        help="binary: real vs AI; generator: which model")
     parser.add_argument("--generators", nargs="+", default=["midjourney", "stable_diffusion", "dall_e", "other"],
                        help="Generator names for generator task")
     parser.add_argument("--epochs", type=int, default=10)
-    parser.add_argument("--batch-size", type=int, default=32)
+    parser.add_argument("--batch-size", type=int, default=4, help="Batch size per GPU (4 for 4GB VRAM)")
+    parser.add_argument("--accum-steps", type=int, default=4, help="Gradient accumulation steps (effective batch = batch_size * accum_steps)")
     parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--weight-decay", type=float, default=1e-4)
     parser.add_argument("--max-samples", type=int, default=None, help="Max samples per class")
     parser.add_argument("--output-dir", type=str, default="./checkpoints")
     parser.add_argument("--resume", type=str, default=None, help="Resume from checkpoint")
-    parser.add_argument("--num-workers", type=int, default=4)
+    parser.add_argument("--num-workers", type=int, default=2, help="DataLoader workers (lower for less RAM)")
     parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu")
+    parser.add_argument("--freeze-backbone", action="store_true", help="Freeze backbone, train head only (saves VRAM)")
+    parser.add_argument("--grad-checkpoint", action="store_true", help="Enable gradient checkpointing (saves VRAM, slower)")
+    parser.add_argument("--precision", type=str, default="fp16", choices=["fp32", "fp16", "bf16"], help="Mixed precision")
+    parser.add_argument("--img-size", type=int, default=224, help="Input image size (192 saves VRAM)")
     args = parser.parse_args()
     
     device = torch.device(args.device)
     print(f"Using device: {device}")
+    if device.type == "cuda":
+        print(f"GPU: {torch.cuda.get_device_name(0)}, VRAM: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB")
     
     # Data
+    train_transform = transforms.Compose([
+        transforms.Resize((args.img_size, args.img_size)),
+        transforms.RandomHorizontalFlip(),
+        transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    ])
+    val_transform = transforms.Compose([
+        transforms.Resize((args.img_size, args.img_size)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    ])
+    
     if args.task == "binary":
-        train_ds = AIImageDataset(args.data_dir, "train", max_samples_per_class=args.max_samples)
-        val_ds = AIImageDataset(args.data_dir, "val", max_samples_per_class=args.max_samples)
+        train_ds = AIImageDataset(args.data_dir, "train", transform=train_transform, max_samples_per_class=args.max_samples)
+        val_ds = AIImageDataset(args.data_dir, "val", transform=val_transform, max_samples_per_class=args.max_samples)
         num_classes = 2
     else:
-        train_ds = GeneratorDataset(args.data_dir, "train", generator_names=args.generators)
-        val_ds = GeneratorDataset(args.data_dir, "val", generator_names=args.generators)
+        train_ds = GeneratorDataset(args.data_dir, "train", transform=train_transform, generator_names=args.generators)
+        val_ds = GeneratorDataset(args.data_dir, "val", transform=val_transform, generator_names=args.generators)
         num_classes = len(args.generators)
     
     # Handle class imbalance
@@ -256,12 +300,28 @@ def main():
     sampler = WeightedRandomSampler(sample_weights, len(sample_weights), replacement=True)
     
     train_loader = DataLoader(train_ds, batch_size=args.batch_size, sampler=sampler, 
-                             num_workers=args.num_workers, pin_memory=True)
+                             num_workers=args.num_workers, pin_memory=True, drop_last=True)
     val_loader = DataLoader(val_ds, batch_size=args.batch_size, shuffle=False,
                            num_workers=args.num_workers, pin_memory=True)
     
     # Model
-    model = create_model(args.model, num_classes).to(device)
+    model = create_model(args.model, num_classes, pretrained=True).to(device)
+    
+    # Freeze backbone if requested (for low VRAM)
+    if args.freeze_backbone:
+        for name, param in model.named_parameters():
+            if "head" not in name and "fc" not in name and "classifier" not in name:
+                param.requires_grad = False
+        print("Backbone frozen, training head only")
+        # Count trainable params
+        trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
+        total = sum(p.numel() for p in model.parameters())
+        print(f"Trainable params: {trainable:,} / {total:,} ({100*trainable/total:.1f}%)")
+    
+    # Gradient checkpointing
+    if args.grad_checkpoint and hasattr(model, "set_grad_checkpointing"):
+        model.set_grad_checkpointing(True)
+        print("Gradient checkpointing enabled")
     
     if args.resume:
         checkpoint = torch.load(args.resume, map_location=device)
@@ -269,19 +329,35 @@ def main():
         print(f"Resumed from {args.resume}")
     
     criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+    # Only optimize trainable params
+    optimizer = torch.optim.AdamW(
+        [p for p in model.parameters() if p.requires_grad],
+        lr=args.lr, weight_decay=args.weight_decay
+    )
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs)
-    scaler = torch.cuda.amp.GradScaler() if device.type == "cuda" else None
+    
+    # Mixed precision
+    use_amp = device.type == "cuda" and args.precision != "fp32"
+    scaler = torch.cuda.amp.GradScaler() if use_amp and args.precision == "fp16" else None
+    if args.precision == "bf16" and device.type == "cuda":
+        # bfloat16 doesn't need GradScaler
+        print("Using bfloat16 mixed precision")
+    elif use_amp:
+        print("Using fp16 mixed precision with GradScaler")
     
     # Training loop
     best_auc = 0
     os.makedirs(args.output_dir, exist_ok=True)
     
+    accum_steps = max(1, args.accum_steps)
+    effective_batch = args.batch_size * accum_steps
+    print(f"Effective batch size: {effective_batch} (batch={args.batch_size} x accum={accum_steps})")
+    
     for epoch in range(args.epochs):
         print(f"\nEpoch {epoch+1}/{args.epochs}")
         
-        train_loss, train_acc = train_epoch(model, train_loader, criterion, optimizer, device, scaler)
-        val_loss, val_acc, val_auc, preds, labels = evaluate(model, val_loader, criterion, device)
+        train_loss, train_acc = train_epoch(model, train_loader, criterion, optimizer, device, scaler, accum_steps, args.precision)
+        val_loss, val_acc, val_auc, preds, labels = evaluate(model, val_loader, criterion, device, args.precision)
         
         print(f"Train: Loss={train_loss:.4f}, Acc={train_acc:.4f}")
         print(f"Val:   Loss={val_loss:.4f}, Acc={val_acc:.4f}, AUC={val_auc:.4f}")
@@ -305,7 +381,7 @@ def main():
     print(f"\nBest validation AUC: {best_auc:.4f}")
     
     # Final evaluation with classification report
-    val_loss, val_acc, val_auc, preds, labels = evaluate(model, val_loader, criterion, device)
+    val_loss, val_acc, val_auc, preds, labels = evaluate(model, val_loader, criterion, device, args.precision)
     target_names = ["real", "ai"] if args.task == "binary" else args.generators
     print("\nClassification Report:")
     print(classification_report(labels, preds, target_names=target_names))
