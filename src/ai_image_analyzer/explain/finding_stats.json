@@ -1,0 +1,363 @@
+{
+  "datasets": {
+    "defactify": {
+      "real": 400,
+      "ai": 400
+    },
+    "synthbuster": {
+      "real": 200,
+      "ai": 195
+    },
+    "ALL": {
+      "real": 600,
+      "ai": 595
+    }
+  },
+  "findings": {
+    "COLOR_BANDING|ai": {
+      "ai_rate": 0.9731,
+      "real_rate": 0.9883,
+      "ai_ci": [
+        0.9568,
+        0.9834
+      ],
+      "real_ci": [
+        0.9761,
+        0.9943
+      ],
+      "per_dataset": {
+        "defactify": {
+          "ai_rate": 0.995,
+          "real_rate": 0.995
+        },
+        "synthbuster": {
+          "ai_rate": 0.9282,
+          "real_rate": 0.975
+        }
+      },
+      "validated": false
+    },
+    "FFT_DEEP|natural": {
+      "ai_rate": 0.0353,
+      "real_rate": 0.01,
+      "ai_ci": [
+        0.0232,
+        0.0534
+      ],
+      "real_ci": [
+        0.0046,
+        0.0216
+      ],
+      "per_dataset": {
+        "defactify": {
+          "ai_rate": 0.0225,
+          "real_rate": 0.0125
+        },
+        "synthbuster": {
+          "ai_rate": 0.0615,
+          "real_rate": 0.005
+        }
+      },
+      "validated": false
+    },
+    "FFT_LATTICE|ai": {
+      "ai_rate": 1.0,
+      "real_rate": 1.0,
+      "ai_ci": [
+        0.9936,
+        1.0
+      ],
+      "real_ci": [
+        0.9936,
+        1.0
+      ],
+      "per_dataset": {
+        "defactify": {
+          "ai_rate": 1.0,
+          "real_rate": 1.0
+        },
+        "synthbuster": {
+          "ai_rate": 1.0,
+          "real_rate": 1.0
+        }
+      },
+      "validated": false
+    },
+    "FFT_PEAKS|ai": {
+      "ai_rate": 1.0,
+      "real_rate": 1.0,
+      "ai_ci": [
+        0.9936,
+        1.0
+      ],
+      "real_ci": [
+        0.9936,
+        1.0
+      ],
+      "per_dataset": {
+        "defactify": {
+          "ai_rate": 1.0,
+          "real_rate": 1.0
+        },
+        "synthbuster": {
+          "ai_rate": 1.0,
+          "real_rate": 1.0
+        }
+      },
+      "validated": false
+    },
+    "FFT_SHALLOW|ai": {
+      "ai_rate": 0.0437,
+      "real_rate": 0.0417,
+      "ai_ci": [
+        0.03,
+        0.0633
+      ],
+      "real_ci": [
+        0.0284,
+        0.0608
+      ],
+      "per_dataset": {
+        "defactify": {
+          "ai_rate": 0.025,
+          "real_rate": 0.0275
+        },
+        "synthbuster": {
+          "ai_rate": 0.0821,
+          "real_rate": 0.07
+        }
+      },
+      "validated": false
+    },
+    "GLCM_CONTRAST_LOW|ai": {
+      "ai_rate": 1.0,
+      "real_rate": 1.0,
+      "ai_ci": [
+        0.9936,
+        1.0
+      ],
+      "real_ci": [
+        0.9936,
+        1.0
+      ],
+      "per_dataset": {
+        "defactify": {
+          "ai_rate": 1.0,
+          "real_rate": 1.0
+        },
+        "synthbuster": {
+          "ai_rate": 1.0,
+          "real_rate": 1.0
+        }
+      },
+      "validated": false
+    },
+    "HF_HIGH|ai": {
+      "ai_rate": 0.0118,
+      "real_rate": 0.0067,
+      "ai_ci": [
+        0.0057,
+        0.0241
+      ],
+      "real_ci": [
+        0.0026,
+        0.017
+      ],
+      "per_dataset": {
+        "defactify": {
+          "ai_rate": 0.005,
+          "real_rate": 0.01
+        },
+        "synthbuster": {
+          "ai_rate": 0.0256,
+          "real_rate": 0.0
+        }
+      },
+      "validated": false
+    },
+    "HF_LOW|ai": {
+      "ai_rate": 0.0034,
+      "real_rate": 0.0017,
+      "ai_ci": [
+        0.0009,
+        0.0122
+      ],
+      "real_ci": [
+        0.0003,
+        0.0094
+      ],
+      "per_dataset": {
+        "defactify": {
+          "ai_rate": 0.0,
+          "real_rate": 0.0025
+        },
+        "synthbuster": {
+          "ai_rate": 0.0103,
+          "real_rate": 0.0
+        }
+      },
+      "validated": false
+    },
+    "JPEG_QUANT_STEP|neutral": {
+      "ai_rate": 0.6857,
+      "real_rate": 0.6567,
+      "ai_ci": [
+        0.6473,
+        0.7217
+      ],
+      "real_ci": [
+        0.6178,
+        0.6936
+      ],
+      "per_dataset": {
+        "defactify": {
+          "ai_rate": 0.99,
+          "real_rate": 0.985
+        },
+        "synthbuster": {
+          "ai_rate": 0.0615,
+          "real_rate": 0.0
+        }
+      },
+      "validated": false
+    },
+    "JPEG_REENCODE|neutral": {
+      "ai_rate": 0.0134,
+      "real_rate": 0.0,
+      "ai_ci": [
+        0.0068,
+        0.0263
+      ],
+      "real_ci": [
+        0.0,
+        0.0064
+      ],
+      "per_dataset": {
+        "defactify": {
+          "ai_rate": 0.0,
+          "real_rate": 0.0
+        },
+        "synthbuster": {
+          "ai_rate": 0.041,
+          "real_rate": 0.0
+        }
+      },
+      "validated": false
+    },
+    "LBP_ENTROPY_LOW|ai": {
+      "ai_rate": 1.0,
+      "real_rate": 1.0,
+      "ai_ci": [
+        0.9936,
+        1.0
+      ],
+      "real_ci": [
+        0.9936,
+        1.0
+      ],
+      "per_dataset": {
+        "defactify": {
+          "ai_rate": 1.0,
+          "real_rate": 1.0
+        },
+        "synthbuster": {
+          "ai_rate": 1.0,
+          "real_rate": 1.0
+        }
+      },
+      "validated": false
+    },
+    "NOISE_HIGH|natural": {
+      "ai_rate": 0.0185,
+      "real_rate": 0.01,
+      "ai_ci": [
+        0.0104,
+        0.0328
+      ],
+      "real_ci": [
+        0.0046,
+        0.0216
+      ],
+      "per_dataset": {
+        "defactify": {
+          "ai_rate": 0.0,
+          "real_rate": 0.0025
+        },
+        "synthbuster": {
+          "ai_rate": 0.0564,
+          "real_rate": 0.025
+        }
+      },
+      "validated": false
+    },
+    "NOISE_LOW|ai": {
+      "ai_rate": 0.042,
+      "real_rate": 0.025,
+      "ai_ci": [
+        0.0286,
+        0.0613
+      ],
+      "real_ci": [
+        0.0152,
+        0.0408
+      ],
+      "per_dataset": {
+        "defactify": {
+          "ai_rate": 0.0525,
+          "real_rate": 0.0375
+        },
+        "synthbuster": {
+          "ai_rate": 0.0205,
+          "real_rate": 0.0
+        }
+      },
+      "validated": false
+    },
+    "NOISE_UNIFORM|ai": {
+      "ai_rate": 0.0017,
+      "real_rate": 0.0,
+      "ai_ci": [
+        0.0003,
+        0.0095
+      ],
+      "real_ci": [
+        0.0,
+        0.0064
+      ],
+      "per_dataset": {
+        "defactify": {
+          "ai_rate": 0.0,
+          "real_rate": 0.0
+        },
+        "synthbuster": {
+          "ai_rate": 0.0051,
+          "real_rate": 0.0
+        }
+      },
+      "validated": false
+    },
+    "SENSOR_PERIOD_LOW|ai": {
+      "ai_rate": 0.684,
+      "real_rate": 0.6317,
+      "ai_ci": [
+        0.6456,
+        0.7201
+      ],
+      "real_ci": [
+        0.5923,
+        0.6693
+      ],
+      "per_dataset": {
+        "defactify": {
+          "ai_rate": 0.665,
+          "real_rate": 0.5725
+        },
+        "synthbuster": {
+          "ai_rate": 0.7231,
+          "real_rate": 0.75
+        }
+      },
+      "validated": false
+    }
+  }
+}

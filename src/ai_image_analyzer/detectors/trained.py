@@ -1,8 +1,12 @@
 from __future__ import annotations
 from typing import Any, Optional
 import numpy as np
-import torch
-import torch.nn as nn
+try:  # torch is optional: the bundled ONNX detector (onnx_detector.py) does not need it
+    import torch
+    import torch.nn as nn
+except ImportError:  # pragma: no cover
+    torch = None
+    nn = None
 from ..analysis.analyzer import AnalysisData
 from .base import BaseDetector, DetectorResult, DetectorStatus
 
@@ -26,6 +30,7 @@ class TrainedModelDetector(BaseDetector):
         self._model = None
         self._transform = None
         self._load_error: Optional[str] = None
+        self._forensic_preprocess = False
     
     def _lazy_load(self):
         if self._model is not None or self._load_error is not None:
@@ -35,7 +40,9 @@ class TrainedModelDetector(BaseDetector):
             import timm
             from torchvision import transforms
             
-            checkpoint = torch.load(self.checkpoint_path, map_location=self.device)
+            checkpoint = torch.load(self.checkpoint_path, map_location=self.device, weights_only=False)
+            self.input_size = int(checkpoint.get("img_size", self.input_size))
+            self._forensic_preprocess = checkpoint.get("preprocess") == "center_crop_256_jpeg95"
             self._model = timm.create_model(
                 checkpoint.get("model_name", self.model_name),
                 pretrained=False,
@@ -58,8 +65,18 @@ class TrainedModelDetector(BaseDetector):
         return self._model is not None
     
     def _preprocess(self, rgb: np.ndarray):
+        import io
         from PIL import Image
         img = Image.fromarray(rgb)
+        if self._forensic_preprocess:
+            # Must mirror scripts/build_dataset.py: center-crop square -> 256px -> JPEG q95
+            w, h = img.size
+            side = min(w, h)
+            img = img.crop(((w - side) // 2, (h - side) // 2, (w - side) // 2 + side, (h - side) // 2 + side))
+            img = img.resize((256, 256), Image.LANCZOS)
+            buf = io.BytesIO()
+            img.save(buf, "JPEG", quality=95)
+            img = Image.open(buf).convert("RGB")
         return self._transform(img).unsqueeze(0).to(self.device)
     
     def evaluate(self, data: AnalysisData) -> DetectorResult:
@@ -74,7 +91,7 @@ class TrainedModelDetector(BaseDetector):
         try:
             import torch
             with torch.no_grad():
-                x = self._preprocess(data.signals.rgb)
+                x = self._preprocess(getattr(data, "original_rgb", data.signals.rgb))
                 logits = self._model(x)
                 probs = torch.softmax(logits, dim=1).cpu().numpy()[0]
             
@@ -103,6 +120,14 @@ class TrainedModelDetector(BaseDetector):
                 status=DetectorStatus.UNAVAILABLE,
                 reasoning=[f"Inference error: {type(e).__name__}: {e}"],
             )
+
+
+class TrainedBinaryDetector(TrainedModelDetector):
+    """Real-vs-AI detector; architecture, input size and preprocessing come from the checkpoint."""
+    name = "binary_trained"
+
+    def __init__(self, checkpoint_path: str, device: str = "cpu", threshold: float = 0.5):
+        super().__init__(checkpoint_path, "efficientnet_b0", device, 192, threshold)
 
 
 class TrainedViTDetector(TrainedModelDetector):
@@ -173,7 +198,7 @@ class TrainedGeneratorDetector(BaseDetector):
             import timm
             from torchvision import transforms
             
-            checkpoint = torch.load(self.checkpoint_path, map_location=self.device)
+            checkpoint = torch.load(self.checkpoint_path, map_location=self.device, weights_only=False)
             self._model = timm.create_model(
                 checkpoint.get("model_name", self.model_name),
                 pretrained=False,
@@ -284,7 +309,7 @@ class TrainedAttributionClassifier(BaseDetector):
             import timm
             from torchvision import transforms
             
-            checkpoint = torch.load(self.checkpoint_path, map_location=self.device)
+            checkpoint = torch.load(self.checkpoint_path, map_location=self.device, weights_only=False)
             # Multi-head model: backbone + two heads
             self._model = AttributionModel(
                 backbone_name=checkpoint.get("model_name", self.model_name),
@@ -368,7 +393,7 @@ class TrainedAttributionClassifier(BaseDetector):
             )
 
 
-class AttributionModel(torch.nn.Module):
+class AttributionModel(torch.nn.Module if torch is not None else object):
     """Multi-head model for attribution (family + specific model)."""
     
     def __init__(self, backbone_name: str, num_families: int, num_models: int, pretrained: bool = True):
@@ -394,7 +419,7 @@ def create_trained_detectors(
     detectors = []
     
     if binary_checkpoint:
-        detectors.append(TrainedViTDetector(binary_checkpoint, device))
+        detectors.append(TrainedBinaryDetector(binary_checkpoint, device))
         # Can also add ResNet/EfficientNet ensemble
         # detectors.append(TrainedResNetDetector(binary_checkpoint, device))
         # detectors.append(TrainedEfficientNetDetector(binary_checkpoint, device))

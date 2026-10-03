@@ -18,7 +18,7 @@ class ImageMeta(BaseModel):
 
 
 class AnalysisReport(BaseModel):
-    version: str = "0.1.0"
+    version: str = "0.2.0"
     generated_at: str = Field(default_factory=lambda: datetime.datetime.now(datetime.UTC).isoformat().replace("+00:00", "Z"))
     image: ImageMeta
     metrics: dict[str, Any] = Field(default_factory=dict)
@@ -28,6 +28,8 @@ class AnalysisReport(BaseModel):
     attribution: AttributionResult
     findings: list[Finding] = Field(default_factory=list)
     explanation: str = ""
+    description: str | None = None  # content description (optional; not evidence of AI generation)
+    model_evidence: dict[str, Any] | None = None  # per-region evidence of the trained model (see explain/model_evidence.py)
 
     def to_markdown(self) -> str:
         # Build full markdown report with all sections
@@ -43,11 +45,17 @@ class AnalysisReport(BaseModel):
         if self.image.file_bytes:
             lines.append(f"- **Size:** {self.image.file_bytes:,} bytes")
         lines.append("")
+        if self.description:
+            lines.append(f"## Description")
+            lines.append(f"{self.description}  ")
+            lines.append("*(What the image shows; this is not evidence about whether it is AI-generated.)*")
+            lines.append("")
         lines.append(f"## Verdict")
         lines.append(f"- **AI Probability:** {self.ai_probability:.1%}")
         lines.append(f"- **Verdict:** {self.verdict}")
         lines.append("")
-        lines.append(f"## Attribution")
+        lines.append("## Attribution" + (" (trained generator classifier)" if self.attribution.method == "trained"
+                                         else " (heuristic, unvalidated - not reliable)"))
         lines.append(f"- **Family:** {self.attribution.family.upper()}")
         lines.append(f"- **Score:** {self.attribution.family_scores.get(self.attribution.family, 0):.3f}")
         lines.append(f"- **Specific Model:** {self.attribution.specific_model}")
@@ -95,6 +103,7 @@ def build_report(
 
     # Build narrative explanation
     explanation = _build_explanation(ai_prob, verdict, attribution, findings, data)
+    me = getattr(data, "model_evidence", None)
 
     return AnalysisReport(
         image=image_meta,
@@ -105,6 +114,7 @@ def build_report(
         attribution=attribution,
         findings=findings,
         explanation=explanation,
+        model_evidence=me.to_dict() if me is not None else None,
     )
 
 
@@ -128,14 +138,27 @@ def _build_explanation(
     lines.append("")
 
     # Attribution
-    lines.append(f"**Model family attribution:** {attr.family.upper()} (score: {attr.family_scores.get(attr.family, 0):.3f})")
-    if attr.family != "unknown":
-        lines.append(f"*Specific model: {attr.specific_model}*")
+    if attr.method == "trained":
+        lines.append(f"**Likely generator:** {attr.specific_model}")
+        if attr.family != "unknown":
+            lines.append(f"*Model family: {attr.family}*")
+    else:
+        lines.append(f"**Model family attribution (heuristic, unvalidated - e.g. diffusion images are often labeled GAN):** {attr.family.upper()} (score: {attr.family_scores.get(attr.family, 0):.3f})")
+        if attr.family != "unknown":
+            lines.append(f"*Specific model: {attr.specific_model}*")
     lines.append("")
 
+    me_f = next((f for f in findings if f.code == "MODEL_EVIDENCE_MAP"), None)
+    if me_f is not None:
+        lines.append(f"**Where the model found its evidence:** {me_f.explanation}")
+        lines.append("")
+
     # Top findings
-    ai_findings = [f for f in findings if f.supports == "ai" and f.severity in ("strong", "warning")]
-    nat_findings = [f for f in findings if f.supports == "natural"]
+    # Findings measured as non-discriminative on unseen images are not presented as evidence.
+    def _is_evidence(f): return f.validated is not False
+    ai_findings = [f for f in findings if f.supports == "ai" and f.severity in ("strong", "warning") and _is_evidence(f)]
+    nat_findings = [f for f in findings if f.supports == "natural" and _is_evidence(f)]
+    weak = [f for f in findings if f.validated is False]
 
     if ai_findings:
         lines.append("**Key evidence for AI generation:**")
@@ -147,6 +170,12 @@ def _build_explanation(
         lines.append("**Evidence for natural origin:**")
         for f in nat_findings[:3]:
             lines.append(f"- {f.title}: {f.explanation}")
+        lines.append("")
+
+    if weak:
+        lines.append("**Other measurements (fire about as often on real images as on AI images, so they are not evidence on their own):**")
+        for f in weak:
+            lines.append(f"- {f.title} ({f.value}); fires on {f.measured_ai_rate:.0%} of AI vs {f.measured_real_rate:.0%} of real images")
         lines.append("")
 
     # Metrics summary

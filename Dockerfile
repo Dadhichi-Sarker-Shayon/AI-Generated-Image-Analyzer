@@ -6,7 +6,7 @@ COPY pyproject.toml README.md ./
 COPY src/ ./src/
 COPY configs/ ./configs/
 
-RUN pip install --no-cache-dir -e ".[ml,onnx]"
+RUN pip install --no-cache-dir -e "."
 
 FROM python:3.11-slim AS runtime
 

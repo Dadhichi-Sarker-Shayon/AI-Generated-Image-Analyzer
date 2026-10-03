@@ -19,7 +19,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--heatmap", type=Path, help="Save anomaly heatmap to path")
     parser.add_argument("--alpha", type=float, default=0.5, help="Heatmap overlay alpha")
     parser.add_argument("--device", default="cpu", help="Device for CLIP (cpu/cuda)")
-    parser.add_argument("--version", action="version", version="%(prog)s 0.1.0")
+    parser.add_argument("--binary-checkpoint", type=Path, help="Trained real-vs-AI checkpoint (.pt)")
+    parser.add_argument("--describe", action="store_true", help="Add a natural-language image description (needs the describe extra)")
+    parser.add_argument("--version", action="version", version="%(prog)s 0.2.0")
 
     args = parser.parse_args(argv)
 
@@ -36,6 +38,9 @@ def main(argv: list[str] | None = None) -> int:
         config=args.config,
         use_clip=not args.no_clip,
         clip_device=args.device,
+        binary_checkpoint=str(args.binary_checkpoint) if args.binary_checkpoint else None,
+        trained_device=args.device,
+        describe=args.describe,
     )
 
     if args.heatmap:

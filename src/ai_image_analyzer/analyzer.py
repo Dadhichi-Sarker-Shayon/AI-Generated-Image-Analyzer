@@ -1,4 +1,5 @@
 from __future__ import annotations
+import warnings
 from pathlib import Path
 from typing import Any, Optional
 from .config import AnalysisConfig
@@ -6,11 +7,13 @@ from .io_utils import load_image
 from .analysis.analyzer import SignalAnalyzer
 from .detectors import (
     FrequencyDetector, ClipZeroShotDetector, EnsembleDetector,
-    create_trained_detectors,
+    create_trained_detectors, OnnxBinaryDetector, bundled_model_path,
+    OnnxGeneratorAttributor, bundled_attribution_path,
     ExifForensicsDetector, PatchCNNDetector, ModelSpecificLatticeDetector,
 )
-from .attribution import attribute
+from .attribution import attribute, attribute_trained
 from .explain.findings import build_findings
+from .explain.model_evidence import explain_model_evidence, save_model_heatmap
 from .explain.report import build_report, AnalysisReport
 from .explain.visualize import anomaly_map, save_heatmap
 
@@ -32,7 +35,23 @@ class AIImageAnalyzer:
         use_exif: bool = True,
         use_patch_cnn: bool = True,
         use_model_lattice: bool = True,
+        use_trained: bool = True,
+        explain_model: bool = True,
+        use_attribution: bool = True,
+        describe: bool = False,
+        describer: Any = None,
     ):
+        # Optional natural-language description (needs the `describe` extra; model loads on first use).
+        self.describer = describer
+        if describe and describer is None:
+            from .description import ImageDescriber
+            self.describer = ImageDescriber(device=clip_device or trained_device)
+        self.explain_model = explain_model
+        self.attributor = None
+        if use_attribution and bundled_attribution_path() is not None:
+            att = OnnxGeneratorAttributor()
+            if att.available:
+                self.attributor = att
         if isinstance(config, (str, Path)):
             base_config = AnalysisConfig.from_yaml(config)
         elif config is None:
@@ -60,8 +79,27 @@ class AIImageAnalyzer:
             self.detectors.append(ModelSpecificLatticeDetector(self.config))
         
         # Add trained detectors if checkpoints provided
-        trained = create_trained_detectors(
-            binary_checkpoint=binary_checkpoint,
+        # Trained real-vs-AI model: explicit .onnx / .pt checkpoint, else the bundled ONNX model.
+        trained = []
+        if binary_checkpoint is not None and not Path(binary_checkpoint).is_file():
+            raise FileNotFoundError(f"binary_checkpoint not found: {binary_checkpoint}")
+        use_pt = binary_checkpoint is not None and not str(binary_checkpoint).lower().endswith(".onnx")
+        if binary_checkpoint is not None and not use_pt:
+            onnx_det = OnnxBinaryDetector(binary_checkpoint)
+            if not onnx_det.available:
+                raise RuntimeError(f"Could not load ONNX model {binary_checkpoint}: {onnx_det._load_error}")
+            trained.append(onnx_det)
+        elif binary_checkpoint is None and use_trained and bundled_model_path() is not None:
+            onnx_det = OnnxBinaryDetector()
+            if onnx_det.available:
+                trained.append(onnx_det)
+            else:
+                warnings.warn(
+                    f"Bundled detector could not be loaded ({onnx_det._load_error}); falling back to the "
+                    "much weaker heuristic detectors. Install onnxruntime or pass use_trained=False.",
+                    RuntimeWarning, stacklevel=2)
+        trained += create_trained_detectors(
+            binary_checkpoint=binary_checkpoint if use_pt else None,
             generator_checkpoint=generator_checkpoint,
             attribution_checkpoint=attribution_checkpoint,
             device=trained_device,
@@ -77,6 +115,12 @@ class AIImageAnalyzer:
         for d in self.detectors:
             if "trained" in d.name and d.name not in self.config.detector_weights:
                 all_weights[d.name] = 1.5
+        # With a trained real-vs-AI model loaded, it drives the verdict. Measured on Synthbuster-plus the
+        # heuristic detectors are near chance (AUC 0.46-0.60), so they only support the explanation
+        # (patch_cnn is saturated at ~0.93 for every image -> weight 0).
+        if any(d.name == "binary_trained" for d in self.detectors):
+            all_weights.update({"binary_trained": 4.0, "frequency": 0.3, "exif_forensics": 0.3,
+                                "model_lattice": 0.3, "patch_cnn": 0.0})
         
         self.ensemble = EnsembleDetector(
             self.detectors,
@@ -91,15 +135,33 @@ class AIImageAnalyzer:
         Returns a complete AnalysisReport with verdict, metrics, and explanation.
         """
         rgb, meta = load_image(source)
+        if min(rgb.shape[:2]) < 64:
+            warnings.warn(
+                f"Image is only {rgb.shape[1]}x{rgb.shape[0]} px; results for images smaller than 64 px "
+                "are unreliable.", RuntimeWarning, stacklevel=2)
         data = self.analyzer.analyze(rgb, meta)
+        data.original_rgb = rgb  # full-resolution pixels for trained detectors
+        data.model_evidence = None
+        if self.explain_model:
+            det = next((d for d in self.detectors if isinstance(d, OnnxBinaryDetector) and d.available), None)
+            if det is not None:
+                try:
+                    data.model_evidence = explain_model_evidence(det, rgb)
+                except RuntimeError:  # model without evidence_map output
+                    pass
 
         detector_results = {d.name: d.score_safe(data) for d in self.detectors}
         ensemble_result = self.ensemble.evaluate(data)
         detector_results["ensemble"] = ensemble_result
 
-        attr = attribute(data, self.config)
+        if self.attributor is not None:
+            attr = attribute_trained(self.attributor, rgb, ensemble_result.score or 0.0)
+        else:
+            attr = attribute(data, self.config)
         findings = build_findings(data, ensemble_result, self.config)
         report = build_report(data, detector_results, ensemble_result, attr, findings, self.config)
+        if self.describer is not None:
+            report.description = self.describer.describe(rgb)
 
         return report
 
@@ -113,6 +175,12 @@ class AIImageAnalyzer:
         report = self.analyze(source)
         # Reload original RGB for visualization
         rgb, _ = load_image(source)
+        det = next((d for d in self.detectors if isinstance(d, OnnxBinaryDetector) and d.available), None)
+        if det is not None:  # preferred: where the trained model found its evidence
+            try:
+                return report, save_model_heatmap(rgb, explain_model_evidence(det, rgb), str(heatmap_path), alpha)
+            except RuntimeError:
+                pass
         signals = self.analyzer.analyzer(data=None)._signals if hasattr(self.analyzer, '_signals') else None
         # Rebuild signals for heatmap (could cache but fine)
         from .analysis.signals import ImageSignals

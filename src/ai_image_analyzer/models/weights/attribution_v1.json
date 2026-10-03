@@ -1,0 +1,39 @@
+{
+  "architecture": "efficientnet_b0",
+  "input_size": 192,
+  "mean": [
+    0.485,
+    0.456,
+    0.406
+  ],
+  "std": [
+    0.229,
+    0.224,
+    0.225
+  ],
+  "preprocess": "center_crop_256_jpeg95",
+  "classes": [
+    "adm",
+    "biggan",
+    "dalle3",
+    "glide",
+    "midjourney",
+    "sd15",
+    "sd21",
+    "sd3",
+    "sdxl",
+    "vqdm",
+    "wukong"
+  ],
+  "name": "attribution_v1",
+  "min_confidence": 0.8,
+  "metrics": {
+    "val_acc_same_distribution": 0.883,
+    "closed_set_acc_same_pipeline": 0.78,
+    "closed_set_acc_other_pipeline": 0.475,
+    "at_min_confidence_known_answered": 0.255,
+    "at_min_confidence_known_precision": 0.87,
+    "at_min_confidence_unseen_wrongly_named": 0.118
+  },
+  "notes": "Closed-set over 11 generators; abstains below min_confidence. Threshold chosen from the benchmark table in docs/validation/attribution_eval.json."
+}

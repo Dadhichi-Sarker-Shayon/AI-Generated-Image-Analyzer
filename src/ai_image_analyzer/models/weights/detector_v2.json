@@ -1,0 +1,28 @@
+{
+  "name": "detector_v2",
+  "architecture": "efficientnet_b0",
+  "input_size": 192,
+  "mean": [
+    0.485,
+    0.456,
+    0.406
+  ],
+  "std": [
+    0.229,
+    0.224,
+    0.225
+  ],
+  "preprocess": "center_crop_256_jpeg95",
+  "classes": [
+    "real",
+    "ai"
+  ],
+  "evidence_bias": 0.014339343644678593,
+  "evidence_map": "sum(evidence_map) + evidence_bias == logit_ai - logit_real (exact class-activation decomposition)",
+  "metrics": {
+    "val_auc": 0.9831,
+    "val_acc": 0.9455,
+    "synthbuster_plus_auc": 0.8555,
+    "synthbuster_plus_acc": 0.7057
+  }
+}

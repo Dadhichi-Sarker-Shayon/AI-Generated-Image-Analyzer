@@ -6,7 +6,7 @@ import numpy as np
 from PIL import Image
 
 
-def load_image(source: str | Path | bytes | io.BytesIO | np.ndarray) -> tuple[np.ndarray, dict[str, Any]]:
+def load_image(source: str | Path | bytes | io.BytesIO | np.ndarray | Image.Image) -> tuple[np.ndarray, dict[str, Any]]:
     """
     Load an image from various sources and return as RGB uint8 array plus metadata.
 
@@ -18,8 +18,12 @@ def load_image(source: str | Path | bytes | io.BytesIO | np.ndarray) -> tuple[np
 
     if isinstance(source, np.ndarray):
         arr = source
-        if arr.dtype != np.uint8:
-            arr = (arr * 255).clip(0, 255).astype(np.uint8)
+        if arr.dtype == np.uint16:
+            arr = (arr >> 8).astype(np.uint8)
+        elif arr.dtype != np.uint8:
+            # floats: [0, 1] range is scaled to 8 bit; values already above 1 are taken as 0-255
+            scale = 255.0 if np.issubdtype(arr.dtype, np.floating) and float(np.nanmax(arr)) <= 1.0 else 1.0
+            arr = (np.nan_to_num(arr.astype(np.float64)) * scale).clip(0, 255).astype(np.uint8)
         if arr.ndim == 2:
             arr = np.stack([arr] * 3, axis=-1)
         elif arr.ndim == 3 and arr.shape[2] == 4:
@@ -29,7 +33,10 @@ def load_image(source: str | Path | bytes | io.BytesIO | np.ndarray) -> tuple[np
         meta.update({"width": arr.shape[1], "height": arr.shape[0], "mode": "RGB", "file_bytes": None})
         return arr, meta
 
-    if isinstance(source, (str, Path)):
+    if isinstance(source, Image.Image):
+        img = source
+        meta["file_bytes"] = None
+    elif isinstance(source, (str, Path)):
         with open(source, "rb") as f:
             file_bytes = f.read()
         img = Image.open(io.BytesIO(file_bytes))
