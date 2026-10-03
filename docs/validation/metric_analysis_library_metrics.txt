@@ -1,0 +1,37 @@
+== confound check: AUC of image size alone (whole images) ==
+  defactify: log(pixels) AUC = 0.625   file-bytes AUC = 0.595
+  synthbuster: log(pixels) AUC = 0.538   file-bytes AUC = 0.658
+
+== per-metric AUC (>0.5: higher value = AI). crop = controlled 256px crop, whole = full image ==
+metric                                crop D  crop S  whole D  whole S  keep
+color.banded_fraction                  0.469   0.278    0.400    0.250  
+color.colorfulness                     0.509   0.466    0.527    0.488  
+color.gray_region_rb_cast              0.531   0.464    0.544    0.448  
+color.saturation_std                   0.468   0.491    0.493    0.508  
+frequency.best_lattice_db              0.670   0.453    0.562    0.557  
+frequency.best_lattice_period          0.504   0.476    0.467    0.466  
+frequency.hf_energy_ratio              0.308   0.546    0.473    0.478  
+frequency.max_peak_db                  0.532   0.458    0.471    0.516  
+frequency.mid_energy_ratio             0.401   0.480    0.508    0.527  
+frequency.n_peaks_significant          0.500   0.500    0.500    0.500  
+frequency.power_law_exponent           0.340   0.441    0.455    0.449  
+jpeg.is_jpeg                           0.500   0.500    0.500    0.500  
+noise.noise_hf_ratio                   0.291   0.611    0.454    0.421  
+noise.noise_sigma                      0.315   0.526    0.439    0.454  
+noise.sensor_periodicity_db            0.412   0.512    0.465    0.471  
+noise.spatial_uniformity               0.555   0.591    0.556    0.655  
+noise.tile_std_cv                      0.445   0.409    0.444    0.345  
+texture.fractal_dimension              0.533   0.512    0.614    0.576  
+texture.glcm_contrast                  0.343   0.517    0.462    0.490  
+texture.glcm_energy                    0.543   0.402    0.478    0.344  
+texture.glcm_homogeneity               0.581   0.435    0.516    0.446  
+texture.lbp_entropy                    0.424   0.519    0.456    0.525  
+texture.lbp_uniform_ratio              0.500   0.500    0.500    0.500  
+
+== kept metrics: threshold learned on one benchmark, tested on the other ==
+
+== all metrics together (logistic regression), trained on one benchmark, tested on the other ==
+  defactify -> synthbuster: AUC 0.575
+  synthbuster -> defactify: AUC 0.598
+
+kept: []

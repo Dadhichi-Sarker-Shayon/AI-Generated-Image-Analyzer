@@ -1,0 +1,20 @@
+{
+  "controlled_crop_px": 256,
+  "datasets": {
+    "defactify": {
+      "real": 596,
+      "ai": 600
+    },
+    "synthbuster": {
+      "real": 200,
+      "ai": 390
+    }
+  },
+  "metrics": {},
+  "combined": {
+    "cross_dataset_auc": {
+      "defactify->synthbuster": 0.551,
+      "synthbuster->defactify": 0.455
+    }
+  }
+}

@@ -1,0 +1,40 @@
+== confound check: AUC of image size alone (whole images) ==
+  defactify: log(pixels) AUC = 0.500   file-bytes AUC = 0.593
+  synthbuster: log(pixels) AUC = 0.500   file-bytes AUC = 0.658
+
+== per-metric AUC (>0.5: higher value = AI). crop = controlled 256px crop, whole = full image ==
+metric                                crop D  crop S  whole D  whole S  keep
+chan.res_corr_gb                       0.409   0.570    0.409    0.570  
+chan.res_corr_rg                       0.377   0.517    0.377    0.517  
+grad.flat_frac                         0.483   0.360    0.483    0.360  
+grad.mean                              0.414   0.515    0.414    0.515  
+grad.p99_over_mean                     0.466   0.441    0.466    0.441  
+jpeg.blockiness                        0.459   0.499    0.459    0.499  
+local.min_over_med                     0.509   0.570    0.509    0.570  
+local.std_cv                           0.503   0.426    0.503    0.426  
+res.autocorr_x1                        0.516   0.351    0.516    0.351  
+res.autocorr_x2                        0.449   0.489    0.449    0.489  
+res.autocorr_x4                        0.437   0.422    0.437    0.422  
+res.autocorr_x8                        0.467   0.496    0.467    0.496  
+res.kurtosis                           0.430   0.419    0.430    0.419  
+res.skew                               0.426   0.533    0.426    0.533  
+res.std                                0.308   0.525    0.308    0.525  
+res.zero_frac                          0.582   0.382    0.582    0.382  
+spec.band04                            0.376   0.434    0.376    0.434  
+spec.band08                            0.291   0.480    0.291    0.480  
+spec.band12                            0.294   0.524    0.294    0.524  
+spec.band14                            0.308   0.535    0.308    0.535  
+spec.band15                            0.311   0.545    0.311    0.545  
+spec.hf_drop                           0.549   0.395    0.549    0.395  
+spec.hf_slope                          0.397   0.597    0.397    0.597  
+spec.nyquist_ratio                     0.331   0.596    0.331    0.596  
+tone.clip_frac                         0.373   0.323    0.373    0.323  
+tone.unique_colors                     0.443   0.530    0.443    0.530  
+
+== kept metrics: threshold learned on one benchmark, tested on the other ==
+
+== all metrics together (logistic regression), trained on one benchmark, tested on the other ==
+  defactify -> synthbuster: AUC 0.551
+  synthbuster -> defactify: AUC 0.455
+
+kept: []

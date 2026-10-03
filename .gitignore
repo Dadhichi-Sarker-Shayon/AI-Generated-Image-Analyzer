@@ -6,5 +6,24 @@ dist/
 .venv/
 .pytest_cache/
 demo_out/
-*.onnx
 .DS_Store
+
+# --- large / local-only artifacts (never commit) ---
+data/
+checkpoints/
+checkpoints_*/
+*.pt
+*.pth
+*.parquet
+*.zip
+
+# bundled inference weights ARE committed (see LICENSE-WEIGHTS.md)
+*.onnx
+!src/ai_image_analyzer/models/weights/*.onnx
+
+# local scratch / unverified-provenance images / stale outputs
+test_images/
+real_test_images/
+test_results/
+test_heatmap.png
+FIX_PLAN.md

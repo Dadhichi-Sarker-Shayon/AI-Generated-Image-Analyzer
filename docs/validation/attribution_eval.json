@@ -1,0 +1,71 @@
+{
+  "defactify": {
+    "n": 500,
+    "closed_set_acc": 0.78,
+    "per_generator": {
+      "dalle3": 0.96,
+      "midjourney": 0.93,
+      "sd21": 0.71,
+      "sd3": 0.52,
+      "sdxl": 0.78
+    }
+  },
+  "synthbuster": {
+    "n": 800,
+    "closed_set_acc": 0.475,
+    "per_generator": {
+      "dalle3": 0.41,
+      "glide": 0.95,
+      "midjourney": 0.34,
+      "sd15": 0.33,
+      "sd21": 0.23,
+      "sd3": 0.59,
+      "sdxl": 0.62
+    }
+  },
+  "threshold_table": [
+    {
+      "threshold": 0.0,
+      "known_answered": 1.0,
+      "known_precision": 0.592,
+      "unseen_wrongly_named": 1.0
+    },
+    {
+      "threshold": 0.5,
+      "known_answered": 0.674,
+      "known_precision": 0.707,
+      "unseen_wrongly_named": 0.51
+    },
+    {
+      "threshold": 0.6,
+      "known_answered": 0.53,
+      "known_precision": 0.746,
+      "unseen_wrongly_named": 0.362
+    },
+    {
+      "threshold": 0.7,
+      "known_answered": 0.394,
+      "known_precision": 0.803,
+      "unseen_wrongly_named": 0.216
+    },
+    {
+      "threshold": 0.8,
+      "known_answered": 0.255,
+      "known_precision": 0.87,
+      "unseen_wrongly_named": 0.118
+    },
+    {
+      "threshold": 0.9,
+      "known_answered": 0.112,
+      "known_precision": 0.897,
+      "unseen_wrongly_named": 0.036
+    },
+    {
+      "threshold": 0.95,
+      "known_answered": 0.036,
+      "known_precision": 0.915,
+      "unseen_wrongly_named": 0.01
+    }
+  ],
+  "n_unseen": 500
+}

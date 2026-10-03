@@ -1,0 +1,91 @@
+{
+  "n": 420,
+  "n_real": 30,
+  "n_ai": 390,
+  "detector_auc": {
+    "binary_trained": {
+      "auc": 0.825,
+      "mean_score_real": 0.258,
+      "mean_score_ai": 0.654
+    },
+    "frequency": {
+      "auc": 0.591,
+      "mean_score_real": 0.328,
+      "mean_score_ai": 0.376
+    },
+    "exif_forensics": {
+      "auc": 0.538,
+      "mean_score_real": 0.0,
+      "mean_score_ai": 0.035
+    },
+    "patch_cnn": {
+      "auc": 0.456,
+      "mean_score_real": 0.928,
+      "mean_score_ai": 0.922
+    },
+    "model_lattice": {
+      "auc": 0.598,
+      "mean_score_real": 0.442,
+      "mean_score_ai": 0.485
+    },
+    "ensemble": {
+      "auc": 0.835,
+      "mean_score_real": 0.384,
+      "mean_score_ai": 0.522
+    }
+  },
+  "ensembles": {
+    "original weights (1.5, .5, 1, 1, 1)": {
+      "auc": 0.835,
+      "thr_0.5": {
+        "ai_caught": 0.662,
+        "real_ok": 0.867,
+        "acc": 0.676
+      },
+      "thr_0.6": {
+        "ai_caught": 0.192,
+        "real_ok": 0.967,
+        "acc": 0.248
+      }
+    },
+    "trained model only": {
+      "auc": 0.825,
+      "thr_0.5": {
+        "ai_caught": 0.721,
+        "real_ok": 0.8,
+        "acc": 0.726
+      },
+      "thr_0.6": {
+        "ai_caught": 0.667,
+        "real_ok": 0.9,
+        "acc": 0.683
+      }
+    },
+    "shipped: trained 4, others .3, patch_cnn 0": {
+      "auc": 0.835,
+      "thr_0.5": {
+        "ai_caught": 0.692,
+        "real_ok": 0.9,
+        "acc": 0.707
+      },
+      "thr_0.6": {
+        "ai_caught": 0.626,
+        "real_ok": 0.933,
+        "acc": 0.648
+      }
+    },
+    "trained 8, freq/lattice .5": {
+      "auc": 0.83,
+      "thr_0.5": {
+        "ai_caught": 0.71,
+        "real_ok": 0.8,
+        "acc": 0.717
+      },
+      "thr_0.6": {
+        "ai_caught": 0.646,
+        "real_ok": 0.9,
+        "acc": 0.664
+      }
+    }
+  }
+}
